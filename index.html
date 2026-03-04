@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReplyPilot - 消息回复辅助系统</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand-row">
+      <h1>ReplyPilot</h1>
+      <span class="pill">Pro UI</span>
+    </div>
+    <p>您的消息回复辅助系统</p>
+    <div class="hero-tags">
+      <span>三风格生成</span>
+      <span>情感偏差评估</span>
+      <span>一键复制与历史</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card input-card">
+      <h2>输入信息</h2>
+      <div class="grid">
+        <label>
+          对方身份
+          <select id="role">
+            <option>朋友</option>
+            <option>同事</option>
+            <option>上司</option>
+            <option>导师</option>
+            <option>客户</option>
+            <option>对象/恋人</option>
+            <option>家人</option>
+            <option>其他</option>
+          </select>
+        </label>
+
+        <label id="otherRoleWrap" class="hidden">
+          其他身份（必填）
+          <input id="otherRole" type="text" placeholder="例如：房东、前任、HR、客户家长" />
+        </label>
+
+        <label>
+          目的
+          <select id="intent">
+            <option>道歉</option>
+            <option>感谢</option>
+            <option>回应请求</option>
+            <option selected>请求指导</option>
+            <option>婉拒</option>
+            <option>催进度</option>
+            <option>确认安排</option>
+            <option>其他</option>
+          </select>
+        </label>
+
+        <label id="otherIntentWrap" class="hidden">
+          其他目的（必填）
+          <input id="otherIntent" type="text" placeholder="例如：争取机会、解释延期、请求复议" />
+        </label>
+
+        <label>
+          风格预设
+          <select id="styleTune">
+            <option value="">默认</option>
+            <option>简洁</option>
+            <option>共情</option>
+            <option>坚定</option>
+            <option>委婉</option>
+            <option>俏皮</option>
+            <option>高情商</option>
+          </select>
+        </label>
+
+        <label>
+          自定义风格（可选）
+          <input id="customStyle" type="text" placeholder="例如：温柔坚定、毒舌但不失礼貌、像00后聊天" />
+        </label>
+      </div>
+
+      <label>
+        原消息（对方发来的）
+        <textarea id="originalMessage" rows="4" placeholder="例如：下周组会前请把阶段结果整理好，并说明下一步计划。"></textarea>
+      </label>
+
+      <label>
+        你的真实想法
+        <textarea id="trueThought" rows="4" placeholder="例如：我方向有点乱，想请对方给我明确建议，但不想显得没准备。"></textarea>
+      </label>
+
+      <div class="slider-row">
+        <label>
+          关系亲密度：<span id="closenessValue">50%</span>
+          <input id="closeness" type="range" min="0" max="100" value="50" />
+        </label>
+        <label>
+          正式度：<span id="formalityValue">70</span>
+          <input id="formality" type="range" min="0" max="100" value="70" />
+        </label>
+        <label>
+          热情度：<span id="warmthValue">60</span>
+          <input id="warmth" type="range" min="0" max="100" value="60" />
+        </label>
+      </div>
+
+      <details class="api-config" open>
+        <summary>API 配置（简易模式）</summary>
+
+        <div class="grid api-grid">
+          <label>
+            快捷提供商
+            <select id="providerPreset">
+              <option value="openai" selected>OpenAI（默认）</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="kimi">Kimi（月之暗面）</option>
+              <option value="minimax">MiniMax</option>
+              <option value="qwen">Qwen（通义）</option>
+              <option value="gemini">Gemini</option>
+              <option value="claude">Claude</option>
+              <option value="custom">自定义</option>
+            </select>
+          </label>
+
+          <label>
+            模型名（可选列表）
+            <select id="modelSelect"></select>
+          </label>
+
+          <label>
+            自定义模型（可不填）
+            <input id="customModel" type="text" placeholder="不填则使用上方选中模型" />
+          </label>
+        </div>
+
+        <div class="grid api-grid">
+          <label>
+            Base URL
+            <input id="baseUrl" type="text" value="https://api.openai.com/v1" />
+          </label>
+          <label>
+            API Key
+            <input id="apiKey" type="password" placeholder="sk-..." />
+          </label>
+        </div>
+        <p class="api-tip">只需 3 步：选择提供商 → 填 API Key → 点击生成。若你的服务商兼容 OpenAI 接口，通常可直接使用。</p>
+      </details>
+
+      <div class="action-row">
+        <button id="generateBtn" class="primary">生成回复</button>
+        <button id="clearHistoryBtn" class="ghost">清空历史</button>
+      </div>
+    </section>
+
+    <section class="card output-card">
+      <h2>三种风格回复</h2>
+      <div id="status" class="status"></div>
+      <div id="results" class="results empty">请先填写信息并点击“生成回复”</div>
+    </section>
+
+    <section class="card history-card">
+      <h2>历史记录</h2>
+      <div id="history" class="history empty">暂无历史记录</div>
+    </section>
+  </main>
+
+  <template id="resultTemplate">
+    <article class="result-item">
+      <div class="result-head">
+        <h3></h3>
+        <button class="copy-btn">复制</button>
+      </div>
+      <p class="reply-text"></p>
+      <div class="analysis">
+        <p class="analysis-line"><strong>情感评估：</strong><span class="assessment"></span></p>
+        <p class="analysis-line"><strong>偏差风险：</strong><span class="risk"></span></p>
+      </div>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
